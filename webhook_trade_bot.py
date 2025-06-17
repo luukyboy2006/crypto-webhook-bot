@@ -13,13 +13,13 @@ app = Flask(__name__)
 API_KEY = os.getenv("API_KEY")
 API_SECRET = os.getenv("API_SECRET")
 PASSPHRASE = os.getenv("PASSPHRASE", "securekey123")
-TRADE_AMOUNT_EUR = 100
+TRADE_AMOUNT_USDT = 100
 STOP_LOSS_PERCENT = 0.02  # 2%
 TRAIL_START = 0.03        # Start trailing TP at 3%
 TRAIL_GAP = 0.015         # Trailing TP gap 1.5%
 
 TOP_COINS = ['BTC', 'ETH', 'BNB', 'ADA', 'DOT', 'LTC', 'SOL', 'TRX', 'XRP', 'AVAX']
-PAIR_SUFFIX = 'EUR'
+PAIR_SUFFIX = 'USDT'
 
 client = Client(API_KEY, API_SECRET)
 
@@ -38,12 +38,8 @@ def place_market_order(symbol, side, quantity):
     return order
 
 def set_trailing_sl_tp(symbol, entry_price, quantity):
-    # Calculate SL and trailing TP trigger price
     stop_price = round(entry_price * (1 - STOP_LOSS_PERCENT), 2)
-    trail_start_price = entry_price * (1 + TRAIL_START)
-    trail_price = trail_start_price * (1 - TRAIL_GAP)
-    print(f"[INFO] SL set at {stop_price}, trailing TP from {trail_start_price} trailing by {TRAIL_GAP*100}%")
-    # NOTE: Binance Spot does not support native SL/TP; implement this via background thread or use Binance Futures.
+    print(f"[INFO] SL set at {stop_price}, trailing TP starts at {entry_price * (1 + TRAIL_START)}")
 
 # === WEBHOOK ENDPOINT ===
 @app.route('/webhook', methods=['POST'])
@@ -66,7 +62,7 @@ def webhook():
     symbol = base + quote
     try:
         price = get_price(symbol)
-        quantity = round(TRADE_AMOUNT_EUR / price, 6)
+        quantity = round(TRADE_AMOUNT_USDT / price, 3)
 
         print(f"[INFO] Placing {action.upper()} order for {quantity} {base} at market price {price}")
 
